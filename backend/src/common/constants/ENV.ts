@@ -13,6 +13,7 @@ const ENV = jetEnv({
   Port: num,
   MongoUrl: str,
   JwtSecret: str,
+  ClientUrl: str,
 });
 
 

@@ -39,7 +39,7 @@ connectDB();
 // **** Middleware **** //
 
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: ENV.ClientUrl,
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true,
   optionsSuccessStatus: 204, 
