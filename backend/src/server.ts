@@ -1,16 +1,18 @@
+import cors from 'cors';
 import morgan from 'morgan';
-import path from 'path';
 import helmet from 'helmet';
-import express, { Request, Response, NextFunction } from 'express';
+import express, { NextFunction } from 'express';
 import logger from 'jet-logger';
+import mongoose from 'mongoose';
+import { Request, Response } from 'express';
+
+
 
 import BaseRouter from '@src/routes';
-
-import Paths from '@src/common/constants/Paths';
 import ENV from '@src/common/constants/ENV';
-import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import { RouteError } from '@src/common/util/route-errors';
 import { NodeEnvs } from '@src/common/constants';
+import { RouteError } from '@src/common/util/route-errors';
+import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 
 
 /******************************************************************************
@@ -19,30 +21,48 @@ import { NodeEnvs } from '@src/common/constants';
 
 const app = express();
 
+const mongoURI = ENV.MongoUrl;
+
+
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(mongoURI);
+    logger.err(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    logger.err(error, true);
+    throw error;
+  }
+};
+connectDB();
 
 // **** Middleware **** //
 
-// Basic middleware
+app.use(cors({
+  origin: 'http://localhost:5173',
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+  optionsSuccessStatus: 204, 
+}));
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
-// Show routes called in console during development
 if (ENV.NodeEnv === NodeEnvs.Dev) {
   app.use(morgan('dev'));
 }
 
-// Security
 if (ENV.NodeEnv === NodeEnvs.Production) {
-  // eslint-disable-next-line n/no-process-env
   if (!process.env.DISABLE_HELMET) {
     app.use(helmet());
   }
 }
 
-// Add APIs, must be after middleware
-app.use(Paths.Base, BaseRouter);
 
-// Add error handler
+app.get('/', (_, res) => {
+  res.status(200).json({ msg: 'API is running' });
+});
+app.use('/', BaseRouter);
+
 app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
   if (ENV.NodeEnv !== NodeEnvs.Test.valueOf()) {
     logger.err(err, true);
@@ -55,30 +75,5 @@ app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
   return next(err);
 });
 
-
-// **** FrontEnd Content **** //
-
-// Set views directory (html)
-const viewsDir = path.join(__dirname, 'views');
-app.set('views', viewsDir);
-
-// Set static directory (js and css).
-const staticDir = path.join(__dirname, 'public');
-app.use(express.static(staticDir));
-
-// Nav to users pg by default
-app.get('/', (_: Request, res: Response) => {
-  return res.redirect('/users');
-});
-
-// Redirect to login if not logged in.
-app.get('/users', (_: Request, res: Response) => {
-  return res.sendFile('users.html', { root: viewsDir });
-});
-
-
-/******************************************************************************
-                                Export default
-******************************************************************************/
 
 export default app;

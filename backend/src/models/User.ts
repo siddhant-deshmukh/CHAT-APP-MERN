@@ -1,72 +1,48 @@
-import { isString } from 'jet-validators';
-import { parseObject, TParseOnError } from 'jet-validators/utils';
+import mongoose, { Document, Schema } from 'mongoose';
 
-import { isRelationalKey, transIsDate } from '@src/common/util/validators';
-import { IModel } from './common/types';
-
-
-/******************************************************************************
-                                 Constants
-******************************************************************************/
-
-const DEFAULT_USER_VALS = (): IUser => ({
-  id: -1,
-  name: '',
-  created: new Date(),
-  email: '',
-});
-
-
-/******************************************************************************
-                                  Types
-******************************************************************************/
-
-export interface IUser extends IModel {
+export interface IUser extends Document {
+  _id: string;
   name: string;
-  email: string;
+  user_name: string;
+  avatarUrl: string;
+  password: string;
+  bio?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-
-/******************************************************************************
-                                  Setup
-******************************************************************************/
-
-// Initialize the "parseUser" function
-const parseUser = parseObject<IUser>({
-  id: isRelationalKey,
-  name: isString,
-  email: isString,
-  created: transIsDate,
+const UserSchema: Schema = new Schema({
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    minlength: [5, 'Name must be at least 5 characters long'],
+    maxlength: [30, 'Name cannot exceed 30 characters'],
+    trim: true,
+  },
+  user_name: {
+    type: String,
+    required: [true, 'Username is required'],
+    unique: true,
+    minlength: [3, 'Username must be at least 3 characters long'],
+    maxlength: [20, 'Username cannot exceed 20 characters'],
+    trim: true,
+    lowercase: true,
+  },
+  avatarUrl: {
+    type: String,
+    match: [/^https?:\/\/.+/, 'Please use a valid URL for the avatar'],
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+  },
+  bio: {
+    type: String,
+    maxlength: [100, 'Bio cannot exceed 100 characters'],
+  },
+}, {
+  timestamps: true,
 });
 
-
-/******************************************************************************
-                                 Functions
-******************************************************************************/
-
-/**
- * New user object.
- */
-function newUser(user?: Partial<IUser>): IUser {
-  const retVal = { ...DEFAULT_USER_VALS(), ...user };
-  return parseUser(retVal, errors => {
-    throw new Error('Setup new user failed ' + JSON.stringify(errors, null, 2));
-  });
-}
-
-/**
- * Check is a user object. For the route validation.
- */
-function testUser(arg: unknown, errCb?: TParseOnError): arg is IUser {
-  return !!parseUser(arg, errCb);
-}
-
-
-/******************************************************************************
-                                Export default
-******************************************************************************/
-
-export default {
-  new: newUser,
-  test: testUser,
-} as const;
+const User = mongoose.model<IUser>('User', UserSchema);
+export default User;

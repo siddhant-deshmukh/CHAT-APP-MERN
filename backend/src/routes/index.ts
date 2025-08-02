@@ -1,33 +1,32 @@
 import { Router } from 'express';
 
-import Paths from '@src/common/constants/Paths';
-import UserRoutes from './UserRoutes';
-
-
-/******************************************************************************
-                                Setup
-******************************************************************************/
+import userController from '@src/controller/usersController';
+import { authenticationMiddleware, chatAuthMiddleware, giveChatAccessTo } from '@src/middleware/auth.middleware';
+import { ChatMemberRole } from '@src/models/ChatMembers';
+import chatController from '@src/controller/chatController';
 
 const apiRouter = Router();
 
+apiRouter.post('/login', userController.login);
+apiRouter.post('/register', userController.register);
 
-// ** Add UserRouter ** //
+//* For Authentication
+apiRouter.use(authenticationMiddleware);
 
-// Init router
-const userRouter = Router();
+apiRouter.get('/user', userController.getOne);
+apiRouter.get('/user/all', userController.getAll);
 
-// Get all users
-userRouter.get(Paths.Users.Get, UserRoutes.getAll);
-userRouter.post(Paths.Users.Add, UserRoutes.add);
-userRouter.put(Paths.Users.Update, UserRoutes.update);
-userRouter.delete(Paths.Users.Delete, UserRoutes.delete);
+apiRouter.post('/chat', chatController.createOne);
+apiRouter.get('/chat', chatController.getChats);
 
-// Add UserRouter
-apiRouter.use(Paths.Users.Base, userRouter);
+apiRouter.post('/:chat_id/msg',
+  chatAuthMiddleware, giveChatAccessTo([ChatMemberRole.Admin, ChatMemberRole.Member]), 
+  chatController.addMsg,
+);
 
-
-/******************************************************************************
-                                Export default
-******************************************************************************/
+apiRouter.get('/:chat_id/msg',
+  chatAuthMiddleware, giveChatAccessTo([ChatMemberRole.Admin, ChatMemberRole.Member, ChatMemberRole.Subscriber]), 
+  chatController.getChatMsgs,
+);
 
 export default apiRouter;
