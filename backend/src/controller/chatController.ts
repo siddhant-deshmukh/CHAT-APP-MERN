@@ -8,6 +8,7 @@ import Message, { IMessageCreate } from '@src/models/Message';
 import Chat, { ChatType, IChatCreate } from '@src/models/Chat';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import ChatMember, { ChatMemberRole, IChatMember } from '@src/models/ChatMembers';
+import { sendNewMessage } from '@src/socket';
 
 
 const createOne = async (req: Request, res: Response) => {
@@ -17,7 +18,7 @@ const createOne = async (req: Request, res: Response) => {
 
   const members = Array.from(new Set(_members))
 
-  if (!(req.user_id && members.includes(req.user_id.toString()))) 
+  if (!(req.user_id && members.includes(req.user_id.toString())))
     throw new RouteError(HttpStatusCodes.FORBIDDEN, 'Must be member of this chat');
 
   if (chat_type == ChatType.Group && (!chat_name || !Array.isArray(members) || members.length < 2))
@@ -204,6 +205,19 @@ const addMsg = async (req: Request, res: Response) => {
     type,
   });
 
+  const members = (await ChatMember.find({ chat_id: req.chat_user?.chat_id }).lean()).map((ele) => ele.user_id);
+  members.forEach((user_id) => {
+    if(user_id.toString() != req.user_id?.toString()) {
+      sendNewMessage(user_id.toString(), {
+        ...(msg.toJSON()),
+        msgAuthor: {
+          _id: req.user_id,
+          // name: req.chat_user.
+        }
+      });
+    }
+  })
+
   res.status(HttpStatusCodes.OK).json({ msg });
 };
 
@@ -232,7 +246,7 @@ const getChatMsgs = async (req: Request, res: Response) => {
         preserveNullAndEmptyArrays: true,
       },
     },
-    { $sort: { createdAt:-1, _id: 1 } },
+    { $sort: { createdAt: -1, _id: 1 } },
   ]);
 
   res.status(HttpStatusCodes.OK).json({ msgs });

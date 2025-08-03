@@ -5,6 +5,8 @@ export interface IChatListCardData {
   last_msg: string,
   updatedAt: number,
   // user: IUser
+  chat_type: 'user_chat' | 'group_chat',
+  members?: string[]
 }
 
 export interface IUser {

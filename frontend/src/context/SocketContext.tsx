@@ -20,21 +20,27 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [isConnected, setIsConnected] = useState<'connected' | 'pending' | 'failed' | 'not-connected'>('pending');
 
   const connectSocket = useCallback(() => {
-    if ((socket && socket.connected) || !['connected', 'failed'].includes(isConnected) ) {
-      console.log('Socket already connected.');
+    if ((socket && socket.connected) || ['connected', 'failed'].includes(isConnected)) {
+      console.log('Socket already connected.', isConnected);
       return;
     }
+    console.log("Here to connect scoket.io");
 
-    const newSocket = io(API_BASE_URL, { // Replace with your NestJS Socket.IO URL
+    const newSocket = io(API_BASE_URL, {
       transports: ['websocket', 'polling'],
       auth: {
-        token: localStorage.getItem('authToken'), // Send the JWT token here
+        token: localStorage.getItem('authToken'),
       },
+      reconnectionAttempts: 3,
     });
 
     newSocket.on('connect', () => {
       setIsConnected('connected');
       console.log('Socket connected:', newSocket.id);
+    });
+
+    newSocket.on('new_msg', (args) => {
+      console.log('New_Msg', args);
     });
 
     newSocket.on('disconnect', (reason) => {
@@ -43,6 +49,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     });
 
     newSocket.on('connect_error', (err) => {
+      setIsConnected('failed');
       console.error('Socket connection error:', err.message);
     });
 
@@ -56,15 +63,16 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
       setIsConnected('not-connected');
       console.log('Socket disconnected manually.');
     }
-  }, [socket]);
-
-  useEffect(() => {
     return () => {
       if (socket) {
         socket.disconnect();
       }
     };
   }, [socket]);
+
+  useEffect(() => {
+    connectSocket();
+  }, [])
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, connectSocket, disconnectSocket }}>

@@ -34,9 +34,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     if (response.status === 201) {
-      // toast.success("Created", {
-      //   description: (response.data && response.data.message) || "Resource created successfully.",
-      // });
+      toast.success("Created", {
+        description: (response.data && response.data.message) || "Resource created successfully.",
+      });
     } 
     // else if (response.status >= 200 && response.status < 300) {
     //   toast.success("Success", {
@@ -46,7 +46,7 @@ api.interceptors.response.use(
     return response;
   },
   (error: AxiosError) => {
-    const errorMessage = (error.response?.data as { msg?: string })?.msg || 'Something went wrong.';
+    const errorMessage = (error.response?.data as { message?: string })?.message || 'Something went wrong.';
     let toastTitle = "Error";
     let toastDescription = errorMessage;
     
@@ -88,9 +88,9 @@ api.interceptors.response.use(
     }
 
     // toast.error(toastDescription ?? toastTitle);
-    // toast.error(toastTitle, {
-    //   description: toastDescription,
-    // });
+    toast.error(toastTitle, {
+      description: toastDescription,
+    });
 
     return Promise.reject(error);
   }

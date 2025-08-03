@@ -82,10 +82,27 @@ export function CreateNewChatDialog() {
   }, [selectedPersonalChatMemberId, groupChatName]);
 
   useEffect(() => {
-    if(activeTab == 'personal') {
-      
+    if (activeTab == 'personal') {
+      setAllMembers(() => {
+        const all_existing_user_chat_ids = chatList
+          .filter((ele) => ele.chat_type == 'user_chat')
+          .map(ele => {
+            if (Array.isArray(ele.members) && ele.members.length == 2) {
+              const dropUser = ele.members.filter(ele => ele != user?._id);
+              return dropUser[0]
+            }
+            return ele._id
+          });
+        return orgAllMembers.filter(ele => {
+          return ele._id != user?._id && !all_existing_user_chat_ids.includes(ele._id)
+        })
+      });
     } else {
-
+      setAllMembers(() => {
+        return orgAllMembers.filter(ele => {
+          return ele._id != user?._id
+        })
+      });
     }
   }, [activeTab, chatList, orgAllMembers])
 
@@ -104,7 +121,15 @@ export function CreateNewChatDialog() {
             Choose to create a personal or group chat.
           </DialogDescription>
         </DialogHeader>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+
+
+        <ChatMemberSelector
+          members={allMembers}
+          selectedMemberIds={selectedPersonalChatMemberId}
+          onSelectMembers={setSelectedPersonalChatMemberId}
+          singleSelect={true} // Enable single selection for personal chat
+        />
+        {/* <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="personal">Personal Chat</TabsTrigger>
             <TabsTrigger value="group">Group Chat</TabsTrigger>
@@ -142,7 +167,7 @@ export function CreateNewChatDialog() {
               />
             </div>
           </TabsContent>
-        </Tabs>
+        </Tabs> */}
         <DialogFooter>
           <Button type="submit" onClick={submitNewChatForm}>
             Create Chat

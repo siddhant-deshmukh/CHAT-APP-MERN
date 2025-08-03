@@ -14,7 +14,7 @@ interface MsgListProps {
 
 const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, messageContainerRef }) => {
   const { selectedChat, user } = useAppContext()
-  const { socket, isConnected, connectSocket } = useSocket();
+  const { socket } = useSocket();
   const [loadingMsgs, setLoadingMsgs] = useState(false);
 
   const prevMsgId = useRef<string | undefined>(undefined);
@@ -22,36 +22,35 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
   const prevScrollHeightRef = useRef<number>(0);
   const loadingOlderMsgsRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    if (!['connected', 'failed'].includes(isConnected)) {
-      connectSocket();
-    }
-  }, [user, isConnected, connectSocket]);
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleNewMessage = (data: { message: any; updatedChat: any }) => {
-      console.log('Received new message:', data.message);
-      console.log('Updated chat:', data.updatedChat);
+    const handleNewMessage = (data: any) => {
+      setMsgList((prev) => {
+        return [...prev, data];
+      });
 
-      // setMsgList(prevMsgs => [...prevMsgs, data.message]);
-      // setChatList(prevChats => {
-      //   const existingChatIndex = prevChats.findIndex(chat => chat._id === data.updatedChat._id);
-      //   if (existingChatIndex > -1) {
-      //     const updatedChats = [...prevChats];
-      //     updatedChats[existingChatIndex] = data.updatedChat;
-      //     return updatedChats;
-      //   } else {
-      //     return [...prevChats, data.updatedChat];
-      //   }
-      // });
+
+      const container = messageContainerRef.current;
+      if (container) {
+        const threshold = window.innerHeight;
+        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+
+        if (distanceFromBottom <= threshold) {
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              container.scrollTop = container.scrollHeight;
+            }, 10);
+          });
+        }
+      }
     };
 
-    socket.on('newMessage', handleNewMessage);
+    socket.on('new_msg', handleNewMessage);
 
     return () => {
-      socket.off('newMessage', handleNewMessage);
+      socket.off('new_msg', handleNewMessage);
     };
   }, [socket]);
 
