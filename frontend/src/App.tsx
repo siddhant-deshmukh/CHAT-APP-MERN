@@ -1,34 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { LoaderIcon } from "lucide-react";
+import NavBar from "./components/Navbar";
+import AuthForm from "./features/auth/AuthPage";
+import ChatList from "./features/chat-list-section/ChatList"
+import MsgListSection from "./features/msg-list-section/MsgListSection"
+import useAppContext from "./hooks/useAppContext"
 
 function App() {
-  const [count, setCount] = useState(0)
-
+  const { user, authLoading } = useAppContext();
+  if(authLoading) {
+    return <div>Loading ....</div>
+  }
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="w-full dark bg-background text-foreground h-screen flex">
+      {
+        authLoading &&
+        <LoaderIcon />
+      }
+        {
+          !user && !authLoading && 
+          <AuthForm />
+        }
+        {
+          user && 
+          <div className="flex w-full">
+            <NavBar />
+            <div className="h-full w-[30%] border-r border-border">
+              <ChatList />
+            </div>
+            <div className="h-full w-full ">
+              <MsgListSection />
+            </div>
+          </div>
+        }
+    </div>    
   )
 }
 
