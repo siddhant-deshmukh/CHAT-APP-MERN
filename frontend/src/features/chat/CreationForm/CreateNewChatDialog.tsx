@@ -9,8 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Tabs } from '@radix-ui/react-tabs';
-import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchIcon } from 'lucide-react';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { get, post } from '@/lib/apiCall';
