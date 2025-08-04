@@ -4,10 +4,12 @@ import ChatListCard from "./ChatListCard";
 import useAppContext from "@/hooks/useAppContext";
 import { get } from '@/lib/apiCall';
 import type { IChatListCardData } from "@/types";
+import { useSocket } from "@/context/SocketContext";
 
 
 function ChatList() {
   const { chatList, selectedChat, setChatList } = useAppContext()
+  const { socket } = useSocket();
 
   useEffect(() => {
     get<{ chats: IChatListCardData[] }>('/chat')
@@ -17,6 +19,27 @@ function ChatList() {
         }
       })
   }, [setChatList]);
+
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (data: any) => {
+      setChatList((prev)=> {
+        return [
+          data,
+          ...prev
+        ]
+      });
+    };
+
+    socket.on('new_chat', handleNewMessage);
+
+    return () => {
+      socket.off('new_chat', handleNewMessage);
+    };
+  }, [socket]);
+
 
   return (
     <div className='flex flex-col max-h-full overflow-y-auto'>

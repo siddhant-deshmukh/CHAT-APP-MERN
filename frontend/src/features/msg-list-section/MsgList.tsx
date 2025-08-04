@@ -13,7 +13,7 @@ interface MsgListProps {
 }
 
 const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, messageContainerRef }) => {
-  const { selectedChat, user } = useAppContext()
+  const { selectedChat, user, setChatList } = useAppContext()
   const { socket } = useSocket();
   const [loadingMsgs, setLoadingMsgs] = useState(false);
 
@@ -30,7 +30,21 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
       setMsgList((prev) => {
         return [...prev, data];
       });
-
+      setChatList((prev)=> {
+        const chatCard = prev.find(ele => ele._id == data.chat_id);
+        const otherChats = prev.filter(ele => ele._id != data.chat_id);
+        if(chatCard) {
+          return [
+            {
+              ...chatCard,
+              last_msg: data.text,
+              updatedAt: (new Date(data.createdAt)).getUTCSeconds()
+            },
+            ...otherChats
+          ];
+        }
+        return otherChats;
+      });
 
       const container = messageContainerRef.current;
       if (container) {

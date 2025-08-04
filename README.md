@@ -41,21 +41,28 @@ This project leverages modern web development technologies with an emphasis on t
 ## ⚙️ Environment Variables
 
 ### 🌐 Common
-```env
-NODE_ENV=development
 
-PORT=3079
-HOST=localhost
+1. Create `backend/config/.env.development`, `backend/config/.env.production`, `backend/config/.env.test` with following variable configured correctly
+    ```env
+    NODE_ENV=development
 
-JET_LOGGER_MODE=CONSOLE
-JET_LOGGER_FILEPATH=jet-logger.log
-JET_LOGGER_TIMESTAMP=TRUE
-JET_LOGGER_FORMAT=LINE
+    PORT=3079
+    HOST=localhost
 
-MONGO_URL=mongodb://127.0.0.1:27017/tudo-CHATAPP
-JWT_SECRET=AVeryRandomString
-CLIENT_URL=http://localhost:5173
-```
+    JET_LOGGER_MODE=CONSOLE
+    JET_LOGGER_FILEPATH=jet-logger.log
+    JET_LOGGER_TIMESTAMP=TRUE
+    JET_LOGGER_FORMAT=LINE
+
+    MONGO_URL=mongodb://127.0.0.1:27017/tudo-CHATAPP
+    JWT_SECRET=AVeryRandomString
+    CLIENT_URL=http://localhost:5173
+    ```
+
+2. Create `frontend/.env`
+   ```env
+   VITE_API_BASE=http://localhost:3079/
+   ```
 
 
 ## 🔌 Socket.IO Architecture

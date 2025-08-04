@@ -7,32 +7,29 @@ import useAppContext from "./hooks/useAppContext"
 
 function App() {
   const { user, authLoading } = useAppContext();
-  if(authLoading) {
-    return <div>Loading ....</div>
-  }
   return (
     <div className="w-full dark bg-background text-foreground h-screen flex">
       {
         authLoading &&
-        <LoaderIcon />
+        <LoaderIcon className="animate-spin w-20 h-20 mx-auto mt-[20vh]" />
       }
-        {
-          !user && !authLoading && 
-          <AuthForm />
-        }
-        {
-          user && 
-          <div className="flex w-full">
-            <NavBar />
-            <div className="h-full w-[30%] border-r border-border">
-              <ChatList />
-            </div>
-            <div className="h-full w-full ">
-              <MsgListSection />
-            </div>
+      {
+        !user && !authLoading &&
+        <AuthForm />
+      }
+      {
+        user && !authLoading &&
+        <div className="flex w-full">
+          <NavBar />
+          <div className="h-full w-[30%] border-r border-border">
+            <ChatList />
           </div>
-        }
-    </div>    
+          <div className="h-full w-full ">
+            <MsgListSection />
+          </div>
+        </div>
+      }
+    </div>
   )
 }
 

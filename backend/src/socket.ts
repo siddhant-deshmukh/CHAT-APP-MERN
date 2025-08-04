@@ -18,7 +18,12 @@ export function sendNewMessage(emitTo: string, message: any) {
   if (!io) {
     throw new Error('Socket.IO not initialized!');
   }
-
   io.to(emitTo).emit('new_msg', message);
+}
 
+export function sendNewChat(emitTo: string, message: any) {
+  if (!io) {
+    throw new Error('Socket.IO not initialized!');
+  }
+  io.to(emitTo).emit('new_chat', message);
 }
