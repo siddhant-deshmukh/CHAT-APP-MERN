@@ -112,13 +112,19 @@ const addMsg = async (req: Request, res: Response) => {
   const sendMemberNewMsgPromiseArr = members.map(async (user_id) => {
     if (user_id.toString() != req.user_id?.toString()) {
 
-      const newMsg = await getMessages({
-        chat_id,
-        msg_id: msg._id as Types.ObjectId
+      // const newMsg = await getMessages({
+      //   chat_id,
+      //   msg_id: msg._id as Types.ObjectId
+      // });
+      // if (newMsg && newMsg.length > 0) {
+      //   sendNewMessage(user_id.toString(), newMsg[0]);
+      // }
+      sendNewMessage(user_id.toString(), {
+        ...(msg.toJSON()),
+        msgAuthor: {
+          _id: req.user_id
+        }
       });
-      if (newMsg && newMsg.length > 0) {
-        sendNewMessage(user_id.toString(), newMsg[0]);
-      }
     }
   })
   await Promise.all(sendMemberNewMsgPromiseArr);

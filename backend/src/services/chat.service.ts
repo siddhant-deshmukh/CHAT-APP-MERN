@@ -46,7 +46,8 @@ export async function getChatsOfUser({ user_id: user_id_str, chat_id: chat_id_st
   const chat_id = new mongoose.Types.ObjectId(chat_id_str);
 
   const chats = await ChatMember.aggregate([
-    ...(chat_id ? [{ $match: { chat_id, user_id } }] : [{ $match: { user_id } }]),
+    // ...(chat_id ? [{ $match: { chat_id, user_id } }] : []),
+    { $match: { user_id } },
     {
       $lookup: {
         from: 'chats',
