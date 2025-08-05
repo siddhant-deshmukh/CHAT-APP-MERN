@@ -14,6 +14,7 @@ import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { get, post } from '@/lib/apiCall';
 import useAppContext from '@/hooks/useAppContext';
 import type { IChatListCardData } from '@/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 
@@ -53,12 +54,13 @@ export function CreateNewChatDialog() {
 
   const submitNewChatForm = useCallback(() => {
     const body: any = {
-      members: [...selectedPersonalChatMemberId, user?._id],
-      chat_type: 'group_chat',
     }
     if (activeTab === 'personal') {
+      body.members = [...selectedPersonalChatMemberId, user?._id],
       body.chat_type = 'user_chat'
     } else {
+      body.members = [...selectedGroupChatMemberIds, user?._id],
+      body.chat_type = 'group_chat'
       body.name = groupChatName
     }
     post<{ chat: IChatListCardData }, any>('chat', body).then(res => {
@@ -77,7 +79,7 @@ export function CreateNewChatDialog() {
       setIsOpen(false); // Close the dialog after submission
       resetForm(); // Reset form fields
     })
-  }, [selectedPersonalChatMemberId, groupChatName]);
+  }, [activeTab, selectedPersonalChatMemberId, groupChatName]);
 
   useEffect(() => {
     if (activeTab == 'personal') {
@@ -121,13 +123,8 @@ export function CreateNewChatDialog() {
         </DialogHeader>
 
 
-        <ChatMemberSelector
-          members={allMembers}
-          selectedMemberIds={selectedPersonalChatMemberId}
-          onSelectMembers={setSelectedPersonalChatMemberId}
-          singleSelect={true} // Enable single selection for personal chat
-        />
-        {/* <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="personal">Personal Chat</TabsTrigger>
             <TabsTrigger value="group">Group Chat</TabsTrigger>
@@ -165,7 +162,7 @@ export function CreateNewChatDialog() {
               />
             </div>
           </TabsContent>
-        </Tabs> */}
+        </Tabs>
         <DialogFooter>
           <Button type="submit" onClick={submitNewChatForm}>
             Create Chat
@@ -211,7 +208,7 @@ interface IProps {
 interface ChatMemberSelectorProps {
   members: IProps[];
   selectedMemberIds: string[];
-  onSelectMembers: (selectedIds: string[]) => void;
+  onSelectMembers: React.Dispatch<React.SetStateAction<string[]>>;
   singleSelect?: boolean; // New prop for single selection mode
 }
 
@@ -241,7 +238,7 @@ export function ChatMemberSelector({
     } else {
       // Multiple selection mode
       if (isChecked) {
-        onSelectMembers([...selectedMemberIds, memberId]);
+        onSelectMembers((prev)=> { return [...prev, memberId] });
       } else {
         onSelectMembers(selectedMemberIds.filter((id) => id !== memberId));
       }

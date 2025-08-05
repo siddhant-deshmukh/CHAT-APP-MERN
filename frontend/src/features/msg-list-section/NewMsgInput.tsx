@@ -1,16 +1,14 @@
 import { Button } from "@/components/ui/button";
 import useAppContext from "@/hooks/useAppContext";
 import { post } from "@/lib/apiCall";
-import type { IMsg } from "@/types";
 import { useCallback, useEffect, useRef, type FunctionComponent } from "react";
 import { IoSend } from "react-icons/io5";
 
 interface NewMsgInputProps {
-  setMsgList: React.Dispatch<React.SetStateAction<IMsg[]>>;
-  messageContainerRef: React.RefObject<HTMLDivElement | null>
+  handleNewMessage: (newMsg: any) => void
 }
 
-const NewMsgInput: FunctionComponent<NewMsgInputProps> = ({ setMsgList, messageContainerRef }) => {
+const NewMsgInput: FunctionComponent<NewMsgInputProps> = ({ handleNewMessage }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { selectedChat, user } = useAppContext()
 
@@ -20,33 +18,16 @@ const NewMsgInput: FunctionComponent<NewMsgInputProps> = ({ setMsgList, messageC
         text: inputRef.current.value,
         type: 'text'
       }).then((res) => {
-        setMsgList((prev) => {
-          return [...prev, {
-            msgAuthor: user,
-            ...res.msg
-          }];
-        })
+        if(res.msg) {
+          handleNewMessage(res.msg)
+        }
 
         if (inputRef.current)
           inputRef.current.value = '';
 
-        const container = messageContainerRef.current;
-        if (container) {
-          const threshold = window.innerHeight;
-          const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-
-          if (distanceFromBottom <= threshold) {
-            // Wait for DOM to update before scrolling
-            requestAnimationFrame(() => {
-              setTimeout(() => {
-                container.scrollTop = container.scrollHeight;
-              }, 10);
-            });
-          }
-        }
       })
     }
-  }, [setMsgList, selectedChat, user])
+  }, [selectedChat, user])
 
   useEffect(() => {
     if (inputRef.current) {

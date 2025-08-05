@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Avatar, AvatarImage } from "@radix-ui/react-avatar";
 
 import MsgList from "./MsgList";
@@ -8,9 +8,45 @@ import useAppContext from "@/hooks/useAppContext";
 import defaultUserSvg from "@/assets/profile-default-svgrepo-com.svg"
 
 function MsgListSection() {
-  const { selectedChat } = useAppContext()
+  const { selectedChat, setChatList } = useAppContext()
   const [msgList, setMsgList] = useState<IMsg[]>([])
   const messageContainerRef = useRef<HTMLDivElement>(null);
+
+
+  const handleNewMessage = useCallback((newMsg: any) => {
+    setMsgList((prev) => {
+      return [...prev, newMsg];
+    });
+    setChatList((prev) => {
+      const chatCard = prev.find(ele => ele._id == newMsg.chat_id);
+      const otherChats = prev.filter(ele => ele._id != newMsg.chat_id);
+      if (chatCard) {
+        return [
+          {
+            ...chatCard,
+            last_msg: newMsg.text,
+            updatedAt: (new Date(newMsg.createdAt)).getUTCSeconds()
+          },
+          ...otherChats
+        ];
+      }
+      return otherChats;
+    });
+
+    const container = messageContainerRef.current;
+    if (container && selectedChat?._id == newMsg.chat_id) {
+      const threshold = window.innerHeight;
+      const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+
+      if (distanceFromBottom <= threshold) {
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+          }, 10);
+        });
+      }
+    }
+  }, [selectedChat])
 
   if (selectedChat) {
     const { avatarUrl: groupAvatarUrl, name: groupChatName } = selectedChat
@@ -39,10 +75,10 @@ function MsgListSection() {
         </div>
 
 
-        <MsgList msgList={msgList} setMsgList={setMsgList} messageContainerRef={messageContainerRef}/>
+        <MsgList msgList={msgList} setMsgList={setMsgList} messageContainerRef={messageContainerRef} handleNewMessage={handleNewMessage} />
 
         <div className='absolute bottom-5 w-full px-10'>
-          <NewMsgInput setMsgList={setMsgList}  messageContainerRef={messageContainerRef}/>
+          <NewMsgInput handleNewMessage={handleNewMessage} />
         </div>
       </div>
     )

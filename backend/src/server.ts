@@ -109,15 +109,12 @@ io.use((socket, next) => {
 
 
 io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
 
   const token = socket.handshake.auth.token;
-  console.log('token', token);
   try {
     const decoded = verifyJWT(token);
     const userId = decoded._id;
 
-    console.log(`User ID ${userId} is now online with socket ID ${socket.id}`);
 
     // You can also join a room based on the user ID
     socket.join(userId.toString());

@@ -9,10 +9,11 @@ import { useSocket } from "@/context/SocketContext";
 interface MsgListProps {
   msgList: IMsg[];
   setMsgList: React.Dispatch<React.SetStateAction<IMsg[]>>;
-  messageContainerRef: React.RefObject<HTMLDivElement | null>
+  messageContainerRef: React.RefObject<HTMLDivElement | null>;
+  handleNewMessage: (newMsg: any) => void;
 }
 
-const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, messageContainerRef }) => {
+const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, messageContainerRef, handleNewMessage }) => {
   const { selectedChat, user, setChatList } = useAppContext()
   const { socket } = useSocket();
   const [loadingMsgs, setLoadingMsgs] = useState(false);
@@ -22,45 +23,11 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
   const prevScrollHeightRef = useRef<number>(0);
   const loadingOlderMsgsRef = useRef<boolean>(false);
 
+  
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleNewMessage = (data: any) => {
-      setMsgList((prev) => {
-        return [...prev, data];
-      });
-      setChatList((prev)=> {
-        const chatCard = prev.find(ele => ele._id == data.chat_id);
-        const otherChats = prev.filter(ele => ele._id != data.chat_id);
-        console.log(chatCard, otherChats);
-        if(chatCard) {
-          return [
-            {
-              ...chatCard,
-              last_msg: data.text,
-              updatedAt: (new Date(data.createdAt)).getUTCSeconds()
-            },
-            ...otherChats
-          ];
-        }
-        return otherChats;
-      });
-
-      const container = messageContainerRef.current;
-      if (container) {
-        const threshold = window.innerHeight;
-        const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
-
-        if (distanceFromBottom <= threshold) {
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              container.scrollTop = container.scrollHeight;
-            }, 10);
-          });
-        }
-      }
-    };
 
     socket.on('new_msg', handleNewMessage);
 

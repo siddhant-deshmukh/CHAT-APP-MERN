@@ -1,5 +1,5 @@
 import ChatMember from '@src/models/ChatMembers';
-import Message, { IMessageCreate } from '@src/models/Message';
+import Message from '@src/models/Message';
 import User from '@src/models/User';
 import mongoose, { Types } from 'mongoose';
 
@@ -43,20 +43,10 @@ export async function getChatsOfUser({ user_id: user_id_str, chat_id: chat_id_st
   chat_id?: string,
 }) {
   const user_id = new mongoose.Types.ObjectId(user_id_str);
-  const chat_id = new mongoose.Types.ObjectId(chat_id_str);
-
-  if (chat_id && chat_id_str) {
-    const chats_ = await ChatMember.aggregate([
-      { $match: { chat_id } },
-    ])
-    const chats__ = await ChatMember.aggregate([
-      { $match: { user_id } },
-    ])
-    console.log(chats_);
-  }
+  const chat_id = chat_id_str ? new mongoose.Types.ObjectId(chat_id_str) : null;
 
   const chats = await ChatMember.aggregate([
-    ...(chat_id && chat_id_str ? [{ $match: { chat_id: new Types.ObjectId(chat_id_str) } }] : []),
+    ...(chat_id ? [{ $match: { chat_id: new Types.ObjectId(chat_id_str) } }] : []),
     { $match: { user_id } },
     {
       $lookup: {

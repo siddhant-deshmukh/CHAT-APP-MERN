@@ -67,7 +67,7 @@ const createOne = async (req: Request, res: Response) => {
   const alertChatMembersArr = members.map(async (member_id) => {
     if (member_id != user_id.toString()) {
       if (chat_type == 'user_chat') {
-        const chats = await getChatsOfUser({ user_id: member_id, chat_id: (newChat._id as Types.ObjectId).toString() as string })
+        const chats = await getChatsOfUser({ user_id: member_id, chat_id: (newChat._id as Types.ObjectId).toString() })
         sendNewChat(member_id, chats[0]);
       } else {
         sendNewChat(member_id, newChat.toJSON());
@@ -109,12 +109,12 @@ const addMsg = async (req: Request, res: Response) => {
 
   const members = (await ChatMember.find({ chat_id: req.chat_user?.chat_id }).lean()).map((ele) => ele.user_id);
 
+  const newMsg = await getMessages({
+    chat_id,
+    msg_id: msg._id as Types.ObjectId
+  });
   const sendMemberNewMsgPromiseArr = members.map(async (user_id) => {
     if (user_id.toString() != req.user_id?.toString()) {
-      const newMsg = await getMessages({
-        chat_id,
-        msg_id: msg._id as Types.ObjectId
-      });
       if (newMsg && newMsg.length > 0) {
         sendNewMessage(user_id.toString(), newMsg[0]);
       }
@@ -122,7 +122,7 @@ const addMsg = async (req: Request, res: Response) => {
   })
   await Promise.all(sendMemberNewMsgPromiseArr);
 
-  res.status(HttpStatusCodes.OK).json({ msg });
+  res.status(HttpStatusCodes.OK).json({ msg: newMsg.length > 0 ? newMsg[0] : msg.toJSON() });
 };
 
 const getChatMsgs = async (req: Request, res: Response) => {
