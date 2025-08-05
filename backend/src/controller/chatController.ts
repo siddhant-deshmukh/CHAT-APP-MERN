@@ -67,8 +67,8 @@ const createOne = async (req: Request, res: Response) => {
   const alertChatMembersArr = members.map(async (member_id) => {
     if (member_id != user_id.toString()) {
       if (chat_type == 'user_chat') {
-        // const chats = await getChatsOfUser({ user_id: member_id, chat_id: (newChat._id as Types.ObjectId).toString() as string })
-        sendNewChat(member_id, newChat.toJSON());
+        const chats = await getChatsOfUser({ user_id: member_id, chat_id: (newChat._id as Types.ObjectId).toString() as string })
+        sendNewChat(member_id, chats[0]);
       } else {
         sendNewChat(member_id, newChat.toJSON());
       }
@@ -111,20 +111,13 @@ const addMsg = async (req: Request, res: Response) => {
 
   const sendMemberNewMsgPromiseArr = members.map(async (user_id) => {
     if (user_id.toString() != req.user_id?.toString()) {
-
-      // const newMsg = await getMessages({
-      //   chat_id,
-      //   msg_id: msg._id as Types.ObjectId
-      // });
-      // if (newMsg && newMsg.length > 0) {
-      //   sendNewMessage(user_id.toString(), newMsg[0]);
-      // }
-      sendNewMessage(user_id.toString(), {
-        ...(msg.toJSON()),
-        msgAuthor: {
-          _id: req.user_id
-        }
+      const newMsg = await getMessages({
+        chat_id,
+        msg_id: msg._id as Types.ObjectId
       });
+      if (newMsg && newMsg.length > 0) {
+        sendNewMessage(user_id.toString(), newMsg[0]);
+      }
     }
   })
   await Promise.all(sendMemberNewMsgPromiseArr);

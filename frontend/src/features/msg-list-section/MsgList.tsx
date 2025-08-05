@@ -33,6 +33,7 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
       setChatList((prev)=> {
         const chatCard = prev.find(ele => ele._id == data.chat_id);
         const otherChats = prev.filter(ele => ele._id != data.chat_id);
+        console.log(chatCard, otherChats);
         if(chatCard) {
           return [
             {
@@ -87,6 +88,7 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
       .then((res) => {
         if (res.msgs.length == 0) {
           allMsgSeen.current = true;
+          return;
         }
         const new_msgs = res.msgs.reverse();
         prevMsgId.current = new_msgs[0]._id;
