@@ -1,13 +1,15 @@
 import ChatMember from '@src/models/ChatMembers';
 import Message from '@src/models/Message';
 import User from '@src/models/User';
+import { emitMessage, sendNewMessage } from '@src/socket';
 import mongoose, { Types } from 'mongoose';
 
-export async function getMessages({ chat_id, limit, prev_msg_id, msg_id }: {
+export async function getMessages({ chat_id, limit, prev_msg_id, msg_id, author_id }: {
   chat_id: Types.ObjectId,
   prev_msg_id?: Types.ObjectId,
   limit?: string,
   msg_id?: Types.ObjectId,
+  author_id?: Types.ObjectId,
 }) {
   const msgs = await Message.aggregate([
     { $match: { chat_id: { $eq: chat_id } } },
@@ -34,6 +36,10 @@ export async function getMessages({ chat_id, limit, prev_msg_id, msg_id }: {
     },
     { $sort: { createdAt: -1, _id: 1 } },
   ]);
+  if (author_id) {
+    await ChatMember.updateOne({ user_id: author_id, chat_id: chat_id }, { last_seen: Date.now() });
+    await emitEventToChats(chat_id.toString(), 'chat_seen', { message: { user_id: author_id, chat_id: chat_id, last_seen: new Date() } });
+  }
 
   return msgs;
 }
@@ -176,4 +182,17 @@ export async function getChatsOfUser({ user_id: user_id_str, chat_id: chat_id_st
   ]);
 
   return chats;
+}
+
+export async function emitEventToChats(chat_id: string, event_name: string, { exclude, message }: { exclude?: string, message: any }) {
+  if (chat_id) {
+    const members = (await ChatMember.find({ chat_id: chat_id }).lean()).map((ele) => ele.user_id);
+    const sendMemberNewMsgPromiseArr = members.map(async (user_id) => {
+      if (!exclude || user_id.toString() != exclude) {
+        console.log(user_id.toString(), event_name)
+        emitMessage(user_id.toString(), event_name, message);
+      }
+    })
+    await Promise.all(sendMemberNewMsgPromiseArr);
+  }
 }

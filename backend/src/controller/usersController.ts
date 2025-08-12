@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import { Request, Response } from 'express';
+import { faker } from '@faker-js/faker';
 
 import User from '@src/models/User';
 import { signToken } from '@src/common/util/jwt';
@@ -64,6 +65,7 @@ export const register = async (req: Request, res: Response) => {
   const newUser = await User.create({
     name,
     user_name,
+    avatarUrl: faker.image.avatar(),
     password: hashedPassword,
   });
 

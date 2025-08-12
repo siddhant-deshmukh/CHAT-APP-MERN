@@ -19,6 +19,9 @@ apiRouter.get('/user/all', authenticationMiddleware, userController.getAll);
 apiRouter.post('/chat', authenticationMiddleware, chatController.createOne);
 apiRouter.get('/chat', authenticationMiddleware, chatController.getChats);
 
+
+apiRouter.get('/:chat_id', authenticationMiddleware, chatController.getChat);
+
 apiRouter.post('/:chat_id/msg', authenticationMiddleware,
   chatAuthMiddleware, giveChatAccessTo([ChatMemberRole.Admin, ChatMemberRole.Member]), 
   chatController.addMsg,

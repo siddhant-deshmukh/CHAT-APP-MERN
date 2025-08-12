@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar, AvatarImage } from "@radix-ui/react-avatar";
 
 import MsgList from "./MsgList";
@@ -6,8 +6,10 @@ import type { IMsg } from "@/types";
 import NewMsgInput from "./NewMsgInput";
 import useAppContext from "@/hooks/useAppContext";
 import defaultUserSvg from "@/assets/profile-default-svgrepo-com.svg"
+import { useSocket } from "@/context/SocketContext";
 
 function MsgListSection() {
+  const { socket } = useSocket();
   const { selectedChat, setChatList } = useAppContext()
   const [msgList, setMsgList] = useState<IMsg[]>([])
   const messageContainerRef = useRef<HTMLDivElement>(null);
@@ -25,6 +27,7 @@ function MsgListSection() {
           {
             ...chatCard,
             last_msg: newMsg.text,
+            unread_msg_count: ((selectedChat?._id != chatCard._id) ? (chatCard.unread_msg_count || 0) + 1 : undefined),
             updatedAt: (new Date(newMsg.createdAt)).getUTCSeconds()
           },
           ...otherChats
@@ -47,6 +50,17 @@ function MsgListSection() {
       }
     }
   }, [selectedChat])
+
+ 
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on('new_msg', handleNewMessage);
+    return () => {
+      socket.off('new_msg', handleNewMessage);
+    };
+  }, [socket, handleNewMessage]);
 
   if (selectedChat) {
     const { avatarUrl: groupAvatarUrl, name: groupChatName } = selectedChat
@@ -75,7 +89,7 @@ function MsgListSection() {
         </div>
 
 
-        <MsgList msgList={msgList} setMsgList={setMsgList} messageContainerRef={messageContainerRef} handleNewMessage={handleNewMessage} />
+        <MsgList msgList={msgList} setMsgList={setMsgList} messageContainerRef={messageContainerRef} />
 
         <div className='absolute bottom-5 w-full px-10'>
           <NewMsgInput handleNewMessage={handleNewMessage} />

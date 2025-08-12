@@ -1,11 +1,13 @@
 import React from "react";
 import type { IMsg } from "@/types";
 import type { FunctionComponent } from "react";
+import { CheckCheck } from "lucide-react";
 
 interface MsgCardProps {
   msg: IMsg;
   isIncoming: boolean;
   lastMsgSameAuthor: boolean;
+  isSeen: boolean;
 }
 
 const MessageTailSVG = () => (
@@ -20,7 +22,7 @@ const MessageTailSVG2 = () => {
     <title>tail-out</title><path opacity="0.13" d="M5.188,1H0v11.193l6.467-8.625 C7.526,2.156,6.958,1,5.188,1z"></path><path fill="currentColor" d="M5.188,0H0v11.193l6.467-8.625C7.526,1.156,6.958,0,5.188,0z"></path></svg>
 }
 
-const MsgCard: FunctionComponent<MsgCardProps> = ({ msg: { createdAt, text: message }, isIncoming, lastMsgSameAuthor }) => {
+const MsgCard: FunctionComponent<MsgCardProps> = ({ msg: { createdAt, text: message }, isIncoming, isSeen, lastMsgSameAuthor }) => {
 
   const bubbleClasses = isIncoming
     ? `bg-[#242626] ${ lastMsgSameAuthor ? '': 'rounded-tl-none'  }` 
@@ -38,13 +40,14 @@ const MsgCard: FunctionComponent<MsgCardProps> = ({ msg: { createdAt, text: mess
   return (
     <div className={`flex items-end ${messageAlignment} ${!lastMsgSameAuthor ? 'mt-2.5' : 'mt-1.5'}`}>
       {/* Message content */}
-      <div className={`relative flex max-w-xs sm:max-w-md lg:max-w-lg p-2.5 rounded-lg shadow-sm ${bubbleClasses} ${messageContainerOrder}`}>
+      <div className={`relative flex max-w-xs sm:max-w-md lg:max-w-lg p-2.5 pb-5 rounded-lg shadow-sm ${bubbleClasses} ${messageContainerOrder}`}>
         <div>
           <p className="text-sm break-words text-foreground pr-10">
             {message}
           </p>
-          <div className="text-right text-xs text-foreground-1 mt-1 absolute bottom-1 right-2">
-            {timestamp}
+          <div className="text-right flex items-center text-xs text-foreground-1 mt-1 absolute bottom-1 right-2">
+            <span className="text-primary/60" >{timestamp}</span>
+            { !isIncoming && <CheckCheck className={`w-6 h-4 ${isSeen ? 'text-blue-400':'text-primary/60' }`} /> }
           </div>
         </div>
         <div className={`flex-shrink-0 ${tailOrder} ${tailClasses}`}>

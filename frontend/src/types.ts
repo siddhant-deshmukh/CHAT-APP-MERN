@@ -6,7 +6,13 @@ export interface IChatListCardData {
   updatedAt: number,
   // user: IUser
   chat_type: 'user_chat' | 'group_chat',
-  members?: string[]
+  members?: string[],
+  unread_msg_count?: number,
+}
+
+export interface IChat extends IChatListCardData {
+  totalChatMembers?: number,
+  minLastSeen?: string,
 }
 
 export interface IUser {
@@ -24,4 +30,5 @@ export interface IMsg {
   text: string,
   type: null | 'text' | 'img' | 'video' | 'sticker',
   createdAt: Date,
+  isSeen: boolean,
 }

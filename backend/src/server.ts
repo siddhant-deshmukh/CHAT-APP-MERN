@@ -3,20 +3,20 @@ import http from 'http';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import logger from 'jet-logger';
-import mongoose from 'mongoose';
-import express, { NextFunction } from 'express';
-import { Request, Response } from 'express';
+import mongoose, { Types } from 'mongoose';
+import { Server } from 'socket.io';
+import express, { Request, Response, NextFunction } from 'express';
 
 
 
 import BaseRouter from '@src/routes';
+import { initializeSocket } from './socket';
 import ENV from '@src/common/constants/ENV';
+import { verifyJWT } from './common/util/jwt';
 import { NodeEnvs } from '@src/common/constants';
 import { RouteError } from '@src/common/util/route-errors';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
-import { Server } from 'socket.io';
-import { verifyJWT } from './common/util/jwt';
-import { initializeSocket } from './socket';
+import ChatMember from '@src/models/ChatMembers';
 
 
 /******************************************************************************
@@ -89,10 +89,9 @@ export const io = new Server(server, {
 });
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
-  console.log(token);
 
   if (!token) {
-    console.log('Authentication failed: No token provided.');
+    console.error('Authentication failed: No token provided.');
     return next(new Error('Authentication error: No token provided.'));
   }
 
@@ -115,7 +114,20 @@ io.on('connection', (socket) => {
     const decoded = verifyJWT(token);
     const userId = decoded._id;
 
+    //@ts-ignore
+    socket.userId = userId.toString();
 
+    socket.on('switch-chat', async (chatId: string, prevChatId?: string) => {
+      const isMember = await ChatMember.exists({ chat_id: new Types.ObjectId(chatId), user_id: new Types.ObjectId(userId) });
+
+      if (prevChatId)
+        socket.leave(prevChatId);
+      if (isMember) {
+        // const roomsToLeave = [...socket.rooms].filter(room => room !== userId.toString() && room !== socket.id);
+        // roomsToLeave.forEach(room => socket.leave(room));
+        socket.join(chatId);
+      }
+    });
     // You can also join a room based on the user ID
     socket.join(userId.toString());
 

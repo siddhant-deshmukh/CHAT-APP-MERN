@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 
 import ChatListCard from "./ChatListCard";
 import useAppContext from "@/hooks/useAppContext";
@@ -8,41 +8,53 @@ import { useSocket } from "@/context/SocketContext";
 
 
 function ChatList() {
-  const { chatList, selectedChat, setChatList } = useAppContext()
+  const { chatList, selectedChat, setChatList, setSelectedChat } = useAppContext()
   const { socket } = useSocket();
 
   useEffect(() => {
     get<{ chats: IChatListCardData[] }>('/chat')
-      .then((res)=> {
-        if(res && Array.isArray(res.chats)) {
+      .then((res) => {
+        if (res && Array.isArray(res.chats)) {
           setChatList(res.chats)
         }
       })
   }, [setChatList]);
 
+  const handleMsgSeen = useCallback(({
+    chat_id, last_seen
+  }: { user_id: string, chat_id: string, last_seen: string }) => {
+    setSelectedChat(prev => {
+      if (!prev || prev._id != chat_id ) return prev;
+
+      return { ...prev, minLastSeen: last_seen }
+    })
+  }, [setSelectedChat]);
+
+  const handleNewMessage = useCallback((data: any) => {
+    setChatList((prev) => {
+      return [
+        data,
+        ...prev
+      ]
+    });
+  }, [setChatList]);
 
   useEffect(() => {
     if (!socket) return;
 
-    const handleNewMessage = (data: any) => {
-      setChatList((prev)=> {
-        return [
-          data,
-          ...prev
-        ]
-      });
-    };
 
     socket.on('new_chat', handleNewMessage);
+    socket.on('chat_seen', handleMsgSeen);
 
     return () => {
       socket.off('new_chat', handleNewMessage);
+      socket.off('chat_seen', handleMsgSeen);
     };
-  }, [socket]);
+  }, [socket, handleMsgSeen, handleNewMessage]);
 
 
   return (
-    <div className='flex flex-col max-h-full overflow-y-auto'>
+    <div className='flex flex-col max-h-full custom-scrollbar overflow-y-auto'>
       {
         chatList.map(ele => {
           const props = { ...ele, isSelected: (selectedChat && ele._id === selectedChat._id) }

@@ -4,37 +4,21 @@ import type { IMsg } from "@/types";
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type FunctionComponent } from "react";
 import MsgCard from "./MsgCard";
-import { useSocket } from "@/context/SocketContext";
 
 interface MsgListProps {
   msgList: IMsg[];
   setMsgList: React.Dispatch<React.SetStateAction<IMsg[]>>;
   messageContainerRef: React.RefObject<HTMLDivElement | null>;
-  handleNewMessage: (newMsg: any) => void;
 }
 
-const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, messageContainerRef, handleNewMessage }) => {
-  const { selectedChat, user, setChatList } = useAppContext()
-  const { socket } = useSocket();
+const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, messageContainerRef }) => {
+  const { selectedChat, user } = useAppContext()
   const [loadingMsgs, setLoadingMsgs] = useState(false);
 
   const prevMsgId = useRef<string | undefined>(undefined);
   const allMsgSeen = useRef<boolean>(false);
   const prevScrollHeightRef = useRef<number>(0);
   const loadingOlderMsgsRef = useRef<boolean>(false);
-
-  
-
-  useEffect(() => {
-    if (!socket) return;
-
-
-    socket.on('new_msg', handleNewMessage);
-
-    return () => {
-      socket.off('new_msg', handleNewMessage);
-    };
-  }, [socket]);
 
   const fetchNewMsgs = useCallback(() => {
     if (allMsgSeen.current) {
@@ -83,14 +67,14 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
         setLoadingMsgs(false);
         loadingOlderMsgsRef.current = false;
       })
-  }, [user, selectedChat, loadingOlderMsgsRef, setLoadingMsgs, setMsgList])
+  }, [user, selectedChat?._id, loadingOlderMsgsRef, setLoadingMsgs, setMsgList])
 
   useEffect(() => {
     const container = messageContainerRef.current;
     allMsgSeen.current = false;
     prevMsgId.current = undefined;
     prevScrollHeightRef.current = 0;
-    if (!container || !selectedChat) return;
+    if (!container || !selectedChat?._id) return;
 
     setMsgList([]);
     setLoadingMsgs(false);
@@ -111,7 +95,7 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [selectedChat]);
+  }, [selectedChat?._id]);
 
   // useEffect(() => {
   //   if (loadingMsgs === false && prevScrollHeightRef.current > 0 && messageContainerRef.current && msgList.length > 0) {
@@ -149,9 +133,12 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
 
           const lastMsgSameAuthor = (index === 0 || msg.msgAuthor._id == msgList[index - 1].msgAuthor?._id)
 
+          const isSeen =  ((selectedChat && selectedChat.minLastSeen) ? (new Date(selectedChat?.minLastSeen)) > new Date(msg.createdAt) : false)
+
           return <MsgCard
             key={msg._id}
             msg={msg}
+            isSeen={isSeen}
             isIncoming={isIncoming}
             lastMsgSameAuthor={lastMsgSameAuthor} />
         })

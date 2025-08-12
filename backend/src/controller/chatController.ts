@@ -1,15 +1,15 @@
-import mongoose, { Types } from 'mongoose';
+import { Types } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { Request, Response } from 'express';
 
-import User from '@src/models/User';
 import { RouteError } from '@src/common/util/route-errors';
 import Message, { IMessageCreate } from '@src/models/Message';
 import Chat, { ChatType, IChatCreate } from '@src/models/Chat';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import ChatMember, { ChatMemberRole, IChatMember } from '@src/models/ChatMembers';
-import { sendNewChat, sendNewMessage } from '@src/socket';
-import { getChatsOfUser, getMessages } from '@src/services/chat.service';
+import { sendNewChat } from '@src/socket';
+import { emitEventToChats, getChatsOfUser, getMessages } from '@src/services/chat.service';
+import { faker } from '@faker-js/faker';
 
 
 const createOne = async (req: Request, res: Response) => {
@@ -50,7 +50,7 @@ const createOne = async (req: Request, res: Response) => {
     chat_type,
     name: chat_name,
     bio,
-    avatarUrl: chat_avatar,
+    avatarUrl: chat_avatar ? chat_avatar : ( chat_type == ChatType.Group ? faker.image.avatarGitHub() : null ),
     members: (chat_type == ChatType.User) ? members : undefined,
   });
   const createChatMemberPromiseArray = members.map((member_id) => {
@@ -64,20 +64,19 @@ const createOne = async (req: Request, res: Response) => {
     });
   });
 
-  const alertChatMembersArr = members.map(async (member_id) => {
-    if (member_id != user_id.toString()) {
-      if (chat_type == 'user_chat') {
+  await Promise.all(createChatMemberPromiseArray);
+
+  if (chat_type == 'user_chat') {
+    const alertChatMembersArr = members.map(async (member_id) => {
+      if (member_id != user_id.toString()) {
         const chats = await getChatsOfUser({ user_id: member_id, chat_id: (newChat._id as Types.ObjectId).toString() })
         sendNewChat(member_id, chats[0]);
-      } else {
-        sendNewChat(member_id, newChat.toJSON());
       }
-    }
-  })
-
-
-  await Promise.all(createChatMemberPromiseArray);
-  await Promise.all(alertChatMembersArr);
+    });
+    await Promise.all(alertChatMembersArr);
+  } else {
+    await emitEventToChats((newChat._id as ObjectId).toString(), 'new_chat', { exclude: req.user_id?.toString(), message: newChat.toJSON() })
+  }
 
 
   res.status(HttpStatusCodes.ACCEPTED).json({ chat: newChat });
@@ -107,20 +106,13 @@ const addMsg = async (req: Request, res: Response) => {
     type,
   });
 
-  const members = (await ChatMember.find({ chat_id: req.chat_user?.chat_id }).lean()).map((ele) => ele.user_id);
 
   const newMsg = await getMessages({
     chat_id,
     msg_id: msg._id as Types.ObjectId
   });
-  const sendMemberNewMsgPromiseArr = members.map(async (user_id) => {
-    if (user_id.toString() != req.user_id?.toString()) {
-      if (newMsg && newMsg.length > 0) {
-        sendNewMessage(user_id.toString(), newMsg[0]);
-      }
-    }
-  })
-  await Promise.all(sendMemberNewMsgPromiseArr);
+  await ChatMember.updateOne({ user_id: req.user_id, chat_id: chat_id }, { last_seen: Date.now() });
+  await emitEventToChats(chat_id.toString(), 'new_msg', { exclude: req.user_id?.toString(), message: newMsg[0] });
 
   res.status(HttpStatusCodes.OK).json({ msg: newMsg.length > 0 ? newMsg[0] : msg.toJSON() });
 };
@@ -134,15 +126,61 @@ const getChatMsgs = async (req: Request, res: Response) => {
   const msgs = await getMessages({
     prev_msg_id: new Types.ObjectId(prev_msg_id),
     limit,
-    chat_id: req.chat_user?.chat_id
+    chat_id: req.chat_user?.chat_id,
+    author_id: req.user_id,
   });
 
   res.status(HttpStatusCodes.OK).json({ msgs });
 };
+
+const getChat = async (req: Request, res: Response) => {
+  if (!req.user_id) {
+    throw new RouteError(HttpStatusCodes.UNAUTHORIZED, 'Invalid Token');
+  }
+  const chat_id = req.params.chat_id;
+  const user_id = req.user_id;
+
+  const ans = await ChatMember.aggregate([
+    {
+      $match: {
+        $and: [
+          { user_id: { $ne: new Types.ObjectId(user_id) } }, 
+          { chat_id: new Types.ObjectId(chat_id) }, 
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        "totalChatMembers": {
+          $sum: 1,
+        },
+        "minLastSeen": {
+          $min: '$last_seen',
+        }
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        totalChatMembers: { $add: ["$totalChatMembers", 1] },
+        minLastSeen: 1
+      }
+    }
+  ]);
+
+  if (!ans || ans.length < 1) {
+    throw new RouteError(HttpStatusCodes.FORBIDDEN, 'Not Allowed');
+  }
+  // const chat = await getChatsOfUser({ user_id: user_id.toString(), chat_id: chat_id.toString() });
+
+  res.status(HttpStatusCodes.OK).json({ ...(ans[0]) })
+}
 
 export default {
   createOne,
   getChats,
   addMsg,
   getChatMsgs,
+  getChat,
 } as const;
