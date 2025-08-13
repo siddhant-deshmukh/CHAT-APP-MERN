@@ -42,11 +42,11 @@ export function sendNewChat(emitTo: string, message: any) {
 }
 
 
-function getActiveUsersInChat(chatId: string): string[] {
+export function getActiveUsersInChat(chatId: string): string[] {
   if (!io) {
     throw new Error('Socket.IO not initialized!');
   }
-  
+
   const chatRoomSockets = io.sockets.adapter.rooms.get(chatId);
   if (!chatRoomSockets) return [];
   

@@ -117,7 +117,7 @@ io.on('connection', (socket) => {
     //@ts-ignore
     socket.userId = userId.toString();
 
-    socket.on('switch-chat', async (chatId: string, prevChatId?: string) => {
+    socket.on('switch-chat', async ({ chatId, prevChatId }: { chatId: string, prevChatId?: string }) => {
       const isMember = await ChatMember.exists({ chat_id: new Types.ObjectId(chatId), user_id: new Types.ObjectId(userId) });
 
       if (prevChatId)

@@ -1,4 +1,4 @@
-import React, { createContext, useState, type ReactNode } from 'react';
+import React, { createContext, useRef, useState, type ReactNode } from 'react';
 
 import type { IChat, IChatListCardData, IUser } from '@/types';
 import { useApi } from '@/hooks/useApi';
@@ -11,6 +11,7 @@ interface AppContextType {
   selectedChat: IChat | null,
   setSelectedChat: React.Dispatch<React.SetStateAction<IChat | null>>,
   setChatList: React.Dispatch<React.SetStateAction<IChatListCardData[]>>,
+  prevSelectedChatId: React.RefObject<string | null>
 }
 
 export const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -22,6 +23,8 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
   const [chatList, setChatList] = useState<IChatListCardData[]>([]);
   const [selectedChat, setSelectedChat] = useState<IChat | null>(null);
   
+  const prevSelectedChatId = useRef<string>(null)
+
   const contextValue: AppContextType = {
     user,
     authLoading,
@@ -29,7 +32,8 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     setSelectedChat,
     setUser,
     chatList,
-    setChatList
+    setChatList,
+    prevSelectedChatId
   };
 
   return (

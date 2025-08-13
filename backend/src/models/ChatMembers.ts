@@ -35,7 +35,7 @@ const ChatMemberSchema: Schema = new Schema({
   },
   last_seen: {
     type: Date, 
-    default: Date.now(),
+    default: Date.now,
   },
 }, {
   timestamps: true,

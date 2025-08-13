@@ -135,6 +135,7 @@ const MsgList: FunctionComponent<MsgListProps> = ({ msgList, setMsgList, message
 
           const isSeen =  ((selectedChat && selectedChat.minLastSeen) ? (new Date(selectedChat?.minLastSeen)) > new Date(msg.createdAt) : false)
 
+
           return <MsgCard
             key={msg._id}
             msg={msg}

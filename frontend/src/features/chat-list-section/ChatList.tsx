@@ -8,7 +8,7 @@ import { useSocket } from "@/context/SocketContext";
 
 
 function ChatList() {
-  const { chatList, selectedChat, setChatList, setSelectedChat } = useAppContext()
+  const { chatList, selectedChat, setChatList, setSelectedChat, prevSelectedChatId } = useAppContext()
   const { socket } = useSocket();
 
   useEffect(() => {
@@ -25,7 +25,7 @@ function ChatList() {
   }: { user_id: string, chat_id: string, last_seen: string }) => {
     setSelectedChat(prev => {
       if (!prev || prev._id != chat_id ) return prev;
-
+      
       return { ...prev, minLastSeen: last_seen }
     })
   }, [setSelectedChat]);
@@ -52,6 +52,12 @@ function ChatList() {
     };
   }, [socket, handleMsgSeen, handleNewMessage]);
 
+  useEffect(()=> {
+    if (!socket) return;
+    if (selectedChat) {
+      socket.emit('switch-chat', { chatId: selectedChat._id, prevChatId: prevSelectedChatId.current });
+    }
+  }, [ socket, selectedChat ]);
 
   return (
     <div className='flex flex-col max-h-full custom-scrollbar overflow-y-auto'>

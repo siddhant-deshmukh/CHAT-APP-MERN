@@ -10,7 +10,7 @@ interface NewMsgInputProps {
 
 const NewMsgInput: FunctionComponent<NewMsgInputProps> = ({ handleNewMessage }) => {
   const inputRef = useRef<HTMLInputElement>(null);
-  const { selectedChat, user } = useAppContext()
+  const { selectedChat, user, setSelectedChat } = useAppContext()
 
   const addNewMsg = useCallback(() => {
     if (inputRef.current) {
@@ -18,22 +18,31 @@ const NewMsgInput: FunctionComponent<NewMsgInputProps> = ({ handleNewMessage }) 
         text: inputRef.current.value,
         type: 'text'
       }).then((res) => {
+        if(res.totalChatMembers && res.minLastSeen) {
+          setSelectedChat((prev)=> {
+            if(!prev) return prev;
+            return {
+              ...prev,
+              totalChatMembers: res.totalChatMembers as number,
+              minLastSeen: res.minLastSeen as string
+            }
+          });
+        }
         if(res.msg) {
           handleNewMessage(res.msg)
         }
-
         if (inputRef.current)
           inputRef.current.value = '';
 
       })
     }
-  }, [selectedChat, user])
+  }, [selectedChat?._id, user])
 
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.value = ''
     }
-  }, [selectedChat]);
+  }, [selectedChat?._id]);
 
   return (
     <div className='flex shadow border space-x-2 p-1.5 rounded-full bg-[#242626]'>

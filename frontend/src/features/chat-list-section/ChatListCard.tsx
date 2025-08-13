@@ -1,6 +1,6 @@
 import { MoreVertical } from 'lucide-react'
 import { Avatar, AvatarImage } from '@radix-ui/react-avatar'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@radix-ui/react-dropdown-menu'
 import type { IChatListCardData } from '@/types'
 import React, { useState } from 'react'
 import defaultUserSvg from "@/assets/profile-default-svgrepo-com.svg"
@@ -21,30 +21,33 @@ function ChatListCard(props: IProps) {
   const chatName = groupChatName
   const avatarUrl = groupAvatarUrl || null
 
-  const { setSelectedChat, setChatList } = useAppContext()
+  const { setSelectedChat, setChatList, prevSelectedChatId } = useAppContext()
 
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   return (
     <div className="relative group cursor-pointer">
       <div
-        onClick={() => { 
-          get<{ minLastSeen: string, totalChatMembers: number }>(`/${props._id}`).then((res)=> {
-            setSelectedChat({
-              ...props,
-              ...res,
+        onClick={() => {
+          get<{ minLastSeen: string, totalChatMembers: number }>(`/${props._id}`).then((res) => {
+            setSelectedChat((prev) => {
+              prevSelectedChatId.current =  prev ? prev?._id : null;
+              return {
+                ...props,
+                ...res,
+              }
             });
-            setChatList((prev)=> {
-              return prev.map(ele=> {
-                if(ele._id == props._id) {
+            setChatList((prev) => {
+              return prev.map(ele => {
+                if (ele._id == props._id) {
                   return {
                     ...ele,
                     unread_msg_count: undefined
                   }
-                } 
+                }
                 return ele
               })
-            }) 
+            })
           });
         }}
         className={`flex items-center px-4 py-5 border-b shadow-2xl mx-2 ${isSelected ? 'rounded-xl bg-primary/10' : 'hover:rounded-xl hover:bg-primary/5'}`}>

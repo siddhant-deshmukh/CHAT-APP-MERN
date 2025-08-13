@@ -1,15 +1,15 @@
 import { Types } from 'mongoose';
 import { ObjectId } from 'mongodb';
 import { Request, Response } from 'express';
+import { faker } from '@faker-js/faker';
 
 import { RouteError } from '@src/common/util/route-errors';
 import Message, { IMessageCreate } from '@src/models/Message';
 import Chat, { ChatType, IChatCreate } from '@src/models/Chat';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import ChatMember, { ChatMemberRole, IChatMember } from '@src/models/ChatMembers';
-import { sendNewChat } from '@src/socket';
-import { emitEventToChats, getChatsOfUser, getMessages } from '@src/services/chat.service';
-import { faker } from '@faker-js/faker';
+import { sendNewChat, getActiveUsersInChat  } from '@src/socket';
+import { emitEventToChats, getChatMemersGroupData, getChatsOfUser, getMessages } from '@src/services/chat.service';
 
 
 const createOne = async (req: Request, res: Response) => {
@@ -94,7 +94,7 @@ const getChats = async (req: Request, res: Response) => {
 const addMsg = async (req: Request, res: Response) => {
   const { text, type } = req.body as IMessageCreate;
 
-  if (!req.chat_user) {
+  if (!req.chat_user || !req.user_id) {
     throw new RouteError(HttpStatusCodes.FORBIDDEN, 'Not Allowed');
   }
   const chat_id = req.chat_user?.chat_id;
@@ -111,10 +111,16 @@ const addMsg = async (req: Request, res: Response) => {
     chat_id,
     msg_id: msg._id as Types.ObjectId
   });
-  await ChatMember.updateOne({ user_id: req.user_id, chat_id: chat_id }, { last_seen: Date.now() });
+  const promiseArrChatMember = getActiveUsersInChat(chat_id.toString()).map( async (user_id)=> {
+    const updatedMembers = await ChatMember.updateOne({ user_id: new Types.ObjectId(user_id), chat_id: chat_id }, { last_seen: new Date() });
+    return updatedMembers;
+  });
   await emitEventToChats(chat_id.toString(), 'new_msg', { exclude: req.user_id?.toString(), message: newMsg[0] });
+  const updatedMembers = await Promise.all(promiseArrChatMember);
 
-  res.status(HttpStatusCodes.OK).json({ msg: newMsg.length > 0 ? newMsg[0] : msg.toJSON() });
+  const groupChatUpdatedData = await getChatMemersGroupData(req.user_id?.toString(), chat_id.toString());
+
+  res.status(HttpStatusCodes.OK).json({ msg: newMsg.length > 0 ? newMsg[0] : msg.toJSON(), ...groupChatUpdatedData });
 };
 
 const getChatMsgs = async (req: Request, res: Response) => {
@@ -140,41 +146,13 @@ const getChat = async (req: Request, res: Response) => {
   const chat_id = req.params.chat_id;
   const user_id = req.user_id;
 
-  const ans = await ChatMember.aggregate([
-    {
-      $match: {
-        $and: [
-          { user_id: { $ne: new Types.ObjectId(user_id) } }, 
-          { chat_id: new Types.ObjectId(chat_id) }, 
-        ]
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        "totalChatMembers": {
-          $sum: 1,
-        },
-        "minLastSeen": {
-          $min: '$last_seen',
-        }
-      },
-    },
-    {
-      $project: {
-        _id: 0,
-        totalChatMembers: { $add: ["$totalChatMembers", 1] },
-        minLastSeen: 1
-      }
-    }
-  ]);
+  const ans = await getChatMemersGroupData(user_id.toString(), chat_id);
 
-  if (!ans || ans.length < 1) {
+  if (!ans) {
     throw new RouteError(HttpStatusCodes.FORBIDDEN, 'Not Allowed');
   }
-  // const chat = await getChatsOfUser({ user_id: user_id.toString(), chat_id: chat_id.toString() });
 
-  res.status(HttpStatusCodes.OK).json({ ...(ans[0]) })
+  res.status(HttpStatusCodes.OK).json({ ...(ans) })
 }
 
 export default {

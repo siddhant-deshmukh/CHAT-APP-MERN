@@ -184,6 +184,51 @@ export async function getChatsOfUser({ user_id: user_id_str, chat_id: chat_id_st
   return chats;
 }
 
+export async function getChatMemersGroupData(user_id: string, chat_id: string) {
+  const ans_ = await ChatMember.aggregate([
+    {
+      $match: {
+        $and: [
+          { user_id: { $ne: new Types.ObjectId(user_id) } }, 
+          { chat_id: new Types.ObjectId(chat_id) }, 
+        ]
+      }
+    },
+  ]);
+  const ans = await ChatMember.aggregate([
+    {
+      $match: {
+        $and: [
+          { user_id: { $ne: new Types.ObjectId(user_id) } }, 
+          { chat_id: new Types.ObjectId(chat_id) }, 
+        ]
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        "totalChatMembers": {
+          $sum: 1,
+        },
+        "minLastSeen": {
+          $min: '$last_seen',
+        }
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        totalChatMembers: { $add: ["$totalChatMembers", 1] },
+        minLastSeen: 1
+      }
+    }
+  ]) as [{
+    totalChatMember: number,
+    minLastSeen: string,
+  }];
+  return ans ? ans[0] : null;
+}
+
 export async function emitEventToChats(chat_id: string, event_name: string, { exclude, message }: { exclude?: string, message: any }) {
   if (chat_id) {
     const members = (await ChatMember.find({ chat_id: chat_id }).lean()).map((ele) => ele.user_id);
