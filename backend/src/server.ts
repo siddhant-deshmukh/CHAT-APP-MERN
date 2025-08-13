@@ -17,6 +17,7 @@ import { NodeEnvs } from '@src/common/constants';
 import { RouteError } from '@src/common/util/route-errors';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import ChatMember from '@src/models/ChatMembers';
+import User from './models/User';
 
 
 /******************************************************************************
@@ -87,9 +88,8 @@ export const io = new Server(server, {
     methods: ['GET', 'POST'],
   },
 });
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const token = socket.handshake.auth.token;
-
   if (!token) {
     console.error('Authentication failed: No token provided.');
     return next(new Error('Authentication error: No token provided.'));
@@ -99,6 +99,11 @@ io.use((socket, next) => {
     const decoded = verifyJWT(token);
     if (!decoded._id) throw 'Invalid token';
 
+    const exist_ = await User.exists({ _id: new Types.ObjectId(decoded._id) });
+    if(!exist_) {
+      throw 404;
+    }
+    
     next();
   } catch (err) {
     console.error('Authentication failed: Invalid token.');
@@ -110,6 +115,7 @@ io.use((socket, next) => {
 io.on('connection', (socket) => {
 
   const token = socket.handshake.auth.token;
+  
   try {
     const decoded = verifyJWT(token);
     const userId = decoded._id;

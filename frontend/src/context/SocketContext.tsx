@@ -1,3 +1,4 @@
+import useAppContext from '@/hooks/useAppContext';
 import React, { createContext, useContext, useEffect, useState, type ReactNode, useCallback } from 'react';
 import io, { Socket } from 'socket.io-client';
 
@@ -17,10 +18,11 @@ interface SocketProviderProps {
 
 export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
+  const { user } = useAppContext();
   const [isConnected, setIsConnected] = useState<'connected' | 'pending' | 'failed' | 'not-connected'>('pending');
 
   const connectSocket = useCallback(() => {
-    if ((socket && socket.connected) || ['connected', 'failed'].includes(isConnected)) {
+    if ((socket && socket.connected) || ['connected', 'failed'].includes(isConnected) || !user) {
       console.log('Socket already connected.', isConnected);
       return;
     }
@@ -50,7 +52,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
     });
 
     setSocket(newSocket);
-  }, [socket, isConnected]);
+  }, [socket, user, isConnected]);
 
   const disconnectSocket = useCallback(() => {
     if (socket) {
@@ -68,7 +70,7 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   useEffect(() => {
     connectSocket();
-  }, [])
+  }, [user])
 
   return (
     <SocketContext.Provider value={{ socket, isConnected, connectSocket, disconnectSocket }}>

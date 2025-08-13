@@ -50,7 +50,7 @@ function ChatListCard(props: IProps) {
             })
           });
         }}
-        className={`flex items-center px-4 py-5 border-b shadow-2xl mx-2 ${isSelected ? 'rounded-xl bg-primary/10' : 'hover:rounded-xl hover:bg-primary/5'}`}>
+        className={`flex items-center px-4 py-5 border-b shadow-2xl mx-2 ${isSelected ? 'rounded-xl bg-primary/10' : 'hover:rounded-xl hover:bg-primary/5 group-hover:bg-primary/5'} transition-all duration-200`}>
         {/* Avatar */}
         <Avatar className="w-12 h-12 rounded-full overflow-hidden">
           {avatarUrl && <AvatarImage src={avatarUrl} alt={`${chatName}'s avatar`} />}
@@ -65,29 +65,29 @@ function ChatListCard(props: IProps) {
             <span className="text-xs">{lastMessageTimeDate.getHours()}:{lastMessageTimeDate.getMinutes()}</span>
           </div>
           <div className='flex justify-between '>
-            <p className="text-sm truncate">{last_msg}&nbsp;</p>
+            <p className="text-sm truncate pr-10">{last_msg}&nbsp;</p>
             {/* Dropdown Menu - appears on hover */}
             {/* The 'group-hover:opacity-100' class makes it visible on parent hover */}
           </div>
         </div>
       </div>
-      <div className="absolute flex right-5 bottom-5">
+      <div className="absolute flex right-5 bottom-4">
         {
-          unread_msg_count && <span className='rounded-full p-1 px-2 bg-green-700 text-xs text-white'>
+          unread_msg_count && <span className='rounded-full p-1 px-2 bg-green-700 text-xs text-white translate-x-5  group-hover:translate-x-0 transition-all duration-200'>
             {unread_msg_count}
           </span>
         }
         <div
-          className={`${isMenuVisible || isDropdownOpen ? 'block' : 'hidden'} group-hover:block z-50`}
+          className={`transition-all duration-200  ${isMenuVisible || isDropdownOpen ? 'opacity-100' : 'opacity-0'} group-hover:opacity-100 `}
           onMouseEnter={() => setIsMenuVisible(true)}
           onMouseLeave={() => setIsMenuVisible(false)}>
           <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
-              <button className="p-1 rounded-full focus:outline-none transform opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <button className="p-1 rounded-full focus:outline-none transform opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
                 <MoreVertical className="w-4 h-4 " />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className='bg-primary-foreground border shadow-2xl rounded-lg'>
+            <DropdownMenuContent align="end" className='bg-primary-foreground border shadow-2xl rounded-lg z-50'>
               <DropdownMenuGroup>
                 <DropdownMenuItem className='outline-none hover:bg-primary/10 py-2 border-b px-3 text-sm  rounded-sm'>View Contact</DropdownMenuItem>
                 <DropdownMenuItem className='outline-none hover:bg-primary/10 py-2 border-b px-3 text-sm  rounded-sm'>Mute</DropdownMenuItem>

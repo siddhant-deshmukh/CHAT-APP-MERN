@@ -40,6 +40,10 @@ export function useApi<Res, Req = undefined>(
         default:
           throw new Error(`Unsupported HTTP method: ${method}`);
       }
+      //@ts-ignore
+      if(response && response.err) {
+        throw response;
+      }
 
       setData(response);
     } catch (err) {

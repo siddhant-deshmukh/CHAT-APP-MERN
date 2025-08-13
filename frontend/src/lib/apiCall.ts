@@ -37,7 +37,7 @@ api.interceptors.response.use(
       toast.success("Created", {
         description: (response.data && response.data.message) || "Resource created successfully.",
       });
-    } 
+    }
     // else if (response.status >= 200 && response.status < 300) {
     //   toast.success("Success", {
     //     description: (response.data && response.data.message) || "Operation completed successfully.",
@@ -49,7 +49,7 @@ api.interceptors.response.use(
     const errorMessage = (error.response?.data as { message?: string })?.message || 'Something went wrong.';
     let toastTitle = "Error";
     let toastDescription = errorMessage;
-    
+
     if (error.response) {
       console.error('API Error Response:', error.response.data);
       console.error('API Error Status:', error.response.status);
@@ -101,31 +101,32 @@ export const callApi = async <T, I>(
   url: string,
   data?: I
 ) => {
-  // try {
-  let response: AxiosResponse<T>;
-  switch (method) {
-    case 'GET':
-      response = await api.get<T>(url);
-      break;
-    case 'POST':
-      response = await api.post<T>(url, data);
-      break;
-    case 'PUT':
-      response = await api.put<T>(url, data);
-      break;
-    case 'DELETE':
-      response = await api.delete<T>(url, { data }); // For DELETE with body
-      break;
-    default:
-      throw new Error(`Unsupported HTTP method: ${method}`);
+  try {
+    let response: AxiosResponse<T>;
+    switch (method) {
+      case 'GET':
+        response = await api.get<T>(url);
+        break;
+      case 'POST':
+        response = await api.post<T>(url, data);
+        break;
+      case 'PUT':
+        response = await api.put<T>(url, data);
+        break;
+      case 'DELETE':
+        response = await api.delete<T>(url, { data }); // For DELETE with body
+        break;
+      default:
+        throw new Error(`Unsupported HTTP method: ${method}`);
+    }
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    if (error instanceof AxiosError) {
+      console.error('AxiosError', error.response);
+      return error.response?.data ? { ...error.response?.data, err: true } : { err: true } ;
+    }
   }
-  return response.data;
-  // } catch (error) {
-  //   console.error(error);
-  //   if(error instanceof AxiosError){
-  //     console.error('AxiosError', error.response);
-  //   }
-  // }
 };
 
 export const get = <T>(url: string) => callApi<T, any>('GET', url);
